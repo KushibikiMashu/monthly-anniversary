@@ -61,7 +61,8 @@ function getYearsAndDays(diff: number): Array<number> {
 }
 
 function createMessage(diff: number, years: number, days: number): string {
-    return `🎉おめでとう🎉
+    return `
+🎉おめでとう🎉
 二人が付き合ってから
 ${diff}日が経ちました😍
 今日で${years}年と${days}日です💕
