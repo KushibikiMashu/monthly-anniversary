@@ -68,7 +68,7 @@ ${diff}日が経ちました😍
 これからもよろしくね😘`
 }
 
-function send() {
+function send(): void {
     const options = {
         "method": "POST",
         "headers": getHeaders(),
