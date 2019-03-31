@@ -1,6 +1,7 @@
-const TOKEN = "LINE_NOTIFY_TOKEN"
+const properties = PropertiesService.getScriptProperties()
+const TOKEN = properties.getProperty('LINE_NOTIFY_TOKEN')
+const FROM = new Date(properties.getProperty('FROM'))
 const ENDPOINT = 'https://notify-api.line.me/api/notify'
-const FROM = new Date('2016-05-03')
 const MILLISECONDS_OF_DAY = 86400000
 const DAYS_OF_YEAR = 365
 const STAMPS = [
@@ -10,20 +11,14 @@ const STAMPS = [
     268, // 虹
 ]
 
-function main(): void {
-    const header = getHeader();
-    const body = getBody()
-    sendPost(header, body)
-}
-
-function getHeader() {
+function getHeaders(): { [key: string]: string } {
     return {
         "Content-Type": "application/x-www-form-urlencoded",
         "Authorization": `Bearer ${TOKEN}`
     }
 }
 
-function getStampMumber(): number {
+function getStampNumber(): number {
     const length = STAMPS.length
     const random = getRandomInt(length)
     return STAMPS[random]
@@ -33,16 +28,21 @@ function getRandomInt(max: number): number {
     return Math.floor(Math.random() * Math.floor(max));
 }
 
-function getBody() :string{
-    const payload = {
+function getPayload(): string {
+    const params = {
         'message': getMessage(),
         'stickerPackageId': 4,
-        'stickerId': getStampMumber()
+        'stickerId': getStampNumber()
     }
-    return JSON.stringify(payload)
+
+    let body = [];
+    Object.keys(params).map(key => {
+        body.push(key + '=' + encodeURI(params[key]));
+    })
+    return body.join("&")
 }
 
-function getMessage() :string{
+function getMessage(): string {
     const now = new Date()
     const diff = getDayDiff(now)
     const [years, days] = getYearsAndDays(diff)
@@ -68,13 +68,14 @@ ${diff}日が経ちました😍
 これからもよろしくね😘`
 }
 
-function sendPost(header:{[key:string]: string}, body:string) {
+function send() {
     const options = {
-        "method": "post",
-        "headers": header,
-        "payload": body,
+        "method": "POST",
+        "headers": getHeaders(),
+        "payload": getPayload(),
         "muteHttpExceptions": true
     }
+    Logger.log(options);
     const res = UrlFetchApp.fetch(ENDPOINT, options);
     Logger.log(res.getContentText());
 }
