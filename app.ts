@@ -1,6 +1,8 @@
 const properties = PropertiesService.getScriptProperties()
-const TOKEN = properties.getProperty('LINE_NOTIFY_TOKEN')
-const ENDPOINT = 'https://notify-api.line.me/api/notify'
+// Message API
+const GROUP_ID = properties.getProperty('LINE_GROUP_ID')
+const CHANNEL_ACCESS_TOKEN = properties.getProperty('LINE_MESSAGE_API_CHANNEL_ACCESS_TOKEN')
+const MESSAGE_API_v2_ENDPOINT = 'https://api.line.me/v2/bot/message/push'
 const MILLISECONDS_OF_DAY = 86400000
 const DAYS_OF_YEAR = 365
 const STAMPS = [
@@ -39,7 +41,7 @@ function sendOnMarriageDate() {
 }
 
 function calculateDiffDays(target: string): DiffDays {
-    const diff = (new Date() - new Date(target)) / MILLISECONDS_OF_DAY
+    const diff = (new Date().getTime() - new Date(target).getTime()) / MILLISECONDS_OF_DAY
     return Math.floor(diff)
 }
 
@@ -53,16 +55,14 @@ function createMessage(diff: number, date: DiffDate, type: Anniversary): string 
     const {years, days} = date;
     switch (type) {
         case Anniversary.Dating:
-            return `
-🎉おめでとう🎉
+            return `🎉おめでとう🎉
 二人が付き合ってから
 ${diff}日が経ちました😍
 今日で${years}年と${days}日です💕
 これからもよろしくね😘`
 
         case Anniversary.Marriage:
-            return `
-二人が結婚してから
+            return `二人が結婚してから
 ${diff}日が経ちました😍
 おめでとう🎉🎉🎉
 
@@ -78,18 +78,18 @@ function send(message: string): void {
     const options: URLFetchRequestOptions = {
         "method": "post",
         "headers": getHeaders(),
-        "payload": createPayload(message),
+        "payload": createJsonString(message),
         "muteHttpExceptions": true
     }
     Logger.log(options);
-    const res = UrlFetchApp.fetch(ENDPOINT, options);
+    const res = UrlFetchApp.fetch(MESSAGE_API_v2_ENDPOINT, options);
     Logger.log(res.getContentText());
 }
 
 function getHeaders(): Headers {
     return {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Authorization": `Bearer ${TOKEN}`
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${CHANNEL_ACCESS_TOKEN}`
     }
 }
 
@@ -101,6 +101,23 @@ function getStampNumber(): number {
 
 function getRandomInt(max: number): number {
     return Math.floor(Math.random() * Math.floor(max));
+}
+
+function createJsonString(message: string): string {
+    return JSON.stringify({
+        to: GROUP_ID,
+        messages: [
+            {
+                type: "text",
+                text: message
+            },
+            {
+                "type": "sticker",
+                "packageId": "4",
+                "stickerId": getStampNumber()
+            }
+        ]
+    })
 }
 
 function createPayload(message: string): string {
